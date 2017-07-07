@@ -15,9 +15,6 @@ String weather = "26";
 int stringStart, stringStop = 0;
 int scrollCursor = lcdWidth;
 
-byte heart[8] = {
-    B00000, B00000, B01010, B11111, B01110, B00100, B00000, B00000
-};
 byte cloud[8] = {
 	B00000, B00110,	B01111, B11111, B00000, B00000,	B00000, B00000
 };
