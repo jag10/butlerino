@@ -61,9 +61,9 @@ def git():
     output = ps.communicate()[0]
     return str(int(output))
 
-print(get_weather("albacete"))
+# print(get_weather("albacete"))
 # print(news('http://nytimes.com'))
-print(git())
+# print(git())
 
 schedule.every().second.do(comm)
 schedule.every(5).seconds.do(git)

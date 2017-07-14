@@ -1,5 +1,6 @@
 #include <LiquidCrystal.h>
 #include <Glyphduino.h>
+#include <ArduinoJson.h>
 #include <Arduino.h>
 
 //LiquidCrystal lcd(rs,en,d4,d5,d6,d7);
@@ -25,13 +26,17 @@ byte celsius[8] = {
 	B10000,	B01111,	B01000,	B01000,	B01000,	B01000,	B01000,	B01111
 };
 
-void printSymbol(int pos, byte symbol[]){
-  lcd.createChar(0, symbol);
-  lcd.setCursor(pos, 1);
-  lcd.write((byte)0);
+void printSymbol(int pos, uint8_t glyphId){
+  // lcd.createChar(0, symbol);
+  // lcd.setCursor(pos, 1);
+  // lcd.write((byte)0);
+
+	glyph->registerGlyph(0, glyphId);
+	lcd.setCursor(pos, 1);
+  glyph->printGlyph(glyphId);
 }
 
-void scrollLine(String staticLine, String scrollingLine, int reps, int pos[], byte symbol[]){
+void scrollLine(String staticLine, String scrollingLine, int reps, int pos[], uint8_t glyphId){
   int i = 0;
   while (i < scrollingLine.length() * reps){
     lcd.setCursor(scrollCursor, 0);
@@ -39,7 +44,7 @@ void scrollLine(String staticLine, String scrollingLine, int reps, int pos[], by
     lcd.setCursor(0, 1);
     lcd.print(staticLine);
     for(int i = 0; i <= sizeof(pos)/sizeof(pos[0]); i++){
-      printSymbol(pos[i], symbol);
+      printSymbol(pos[i], glyphId);
     }
     // lcd.setCursor(0, 1);
     delay(300);
@@ -71,22 +76,22 @@ void scrollLine(String staticLine, String scrollingLine, int reps, int pos[], by
 /**
  * hello function: used as a Hello World at startup
  **/
-void hello(int time, byte heart[]) {
-  glyph->registerGlyph(0, GLYPHDUINO_HEART);
+void hello(int time, uint8_t glyphId) {
+  glyph->registerGlyph(0, glyphId);
   lcd.setCursor(5, 0);
   lcd.print(F("Devy"));
   lcd.setCursor(6, 1);
   lcd.print(F("*-*"));
 
   lcd.setCursor(2, 0);
-  glyph->printGlyph(GLYPHDUINO_HEART);
+  glyph->printGlyph(glyphId);
   lcd.setCursor(2, 1);
-  glyph->printGlyph(GLYPHDUINO_HEART);
+  glyph->printGlyph(glyphId);
 
   lcd.setCursor(12, 0);
-  glyph->printGlyph(GLYPHDUINO_HEART);
+  glyph->printGlyph(glyphId);
   lcd.setCursor(12, 1);
-  glyph->printGlyph(GLYPHDUINO_HEART);
+  glyph->printGlyph(glyphId);
 
   delay(time);
   lcd.clear();
@@ -96,10 +101,32 @@ void hello(int time, byte heart[]) {
 void setup() {
   Serial.begin(9600);
   lcd.begin(lcdWidth, lcdHeight);
-  hello(5000, heart);
+  hello(5000, GLYPHDUINO_HEART);
   int pos[2] = {5 ,6};
-  byte symbols[2] = {heart, heart};
-  scrollLine(line2, line1, 1, pos, heart);
+  scrollLine(line2, line1, 1, pos, GLYPHDUINO_HEART);
+
+	StaticJsonBuffer<200> jsonBuffer;
+	char json[] =
+      "{\"sensor\":\"gps\",\"time\":1351824120,\"data\":[48.756080,2.302038]}";
+			JsonObject& root = jsonBuffer.parseObject(json);
+
+  // Test if parsing succeeds.
+  if (!root.success()) {
+    Serial.println("parseObject() failed");
+    return;
+  }
+
+	const char* sensor = root["sensor"];
+  long time = root["time"];
+  double latitude = root["data"][0];
+  double longitude = root["data"][1];
+
+  // Print values.
+  Serial.println(sensor);
+  Serial.println(time);
+  Serial.println(latitude, 6);
+  Serial.println(longitude, 6);
+
 }
 
 void loop() {
