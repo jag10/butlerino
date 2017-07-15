@@ -11,7 +11,7 @@ Glyphduino* glyph = new Glyphduino(&lcd);
 int lcdWidth = 16;
 int lcdHeight = 2;
 String line1 = "Hey, I'm Devy. twat";
-String line2 = "Devy   you"; // <3
+String line2 = "Devy    you"; // <3
 String weather = "26";
 int stringStart, stringStop = 0;
 int scrollCursor = lcdWidth;
@@ -27,25 +27,41 @@ byte celsius[8] = {
 };
 
 void printSymbol(int pos, uint8_t glyphId){
-  // lcd.createChar(0, symbol);
-  // lcd.setCursor(pos, 1);
-  // lcd.write((byte)0);
-
 	glyph->registerGlyph(0, glyphId);
 	lcd.setCursor(pos, 1);
   glyph->printGlyph(glyphId);
 }
 
-void scrollLine(String staticLine, String scrollingLine, int reps, int pos[], uint8_t glyphId){
+void printStaticLine(String json){
+	lcd.setCursor(0, 1);
+	// StaticJsonBuffer<200> jsonBuffer;
+	const size_t bufferSize = 2*JSON_OBJECT_SIZE(3) + 150;
+	DynamicJsonBuffer jsonBuffer(bufferSize);
+	JsonObject& root = jsonBuffer.parseObject(json);
+
+  // Test if parsing succeeds.
+  if (!root.success()) {
+    Serial.println("parseObject() failed");
+		lcd.print("json error");
+		lcd.print(bufferSize);
+    return;
+  }
+	const char* staticLine = root["staticLine"];
+	lcd.print(staticLine);
+}
+
+
+void scrollLine(String json, String scrollingLine, int reps, int pos[], uint8_t glyphId){
   int i = 0;
   while (i < scrollingLine.length() * reps){
     lcd.setCursor(scrollCursor, 0);
     lcd.print(scrollingLine.substring(stringStart, stringStop));
     lcd.setCursor(0, 1);
-    lcd.print(staticLine);
-    for(int i = 0; i <= sizeof(pos)/sizeof(pos[0]); i++){
-      printSymbol(pos[i], glyphId);
-    }
+    // lcd.print(staticLine);
+    printStaticLine(json);
+    // for(int j = 0; j <= sizeof(pos)/sizeof(pos[0]); j++){
+    //   printSymbol(pos[j], glyphId);
+    // }
     // lcd.setCursor(0, 1);
     delay(300);
     if(stringStart == 0 && scrollCursor > 0){
@@ -66,11 +82,6 @@ void scrollLine(String staticLine, String scrollingLine, int reps, int pos[], ui
   delay(300);
   lcd.setCursor(0, 0);
   lcd.print(scrollingLine);
-  // lcd.setCursor(0, 1);
-  // lcd.print(staticLine);
-  // for(int i = 0; i <= sizeof(pos)/sizeof(pos[0]); i++){
-  //   printSymbol(pos[i], symbol);
-  // }
 }
 
 /**
@@ -97,53 +108,70 @@ void hello(int time, uint8_t glyphId) {
   lcd.clear();
 }
 
+int freeRam () {
+  extern int __heap_start, *__brkval;
+  int v;
+  return (int) &v - (__brkval == 0 ? (int) &__heap_start : (int) __brkval);
+}
+
+
+const byte numChars = 128;
+char receivedChars[numChars];   // an array to store the received data
+
+boolean newData = false;
+byte totalReceived = 0;
+
+void recvWithEndMarker() {
+    static byte ndx = 0;
+    char endMarker = '\n';
+    char rc;
+
+    while (Serial.available() > 0 && newData == false) {
+        rc = Serial.read();
+
+        if (rc != endMarker) {
+            receivedChars[ndx] = rc;
+            ndx++;
+            if (ndx >= numChars) {
+                ndx = numChars - 1;
+            }
+        }
+        else {
+            receivedChars[ndx] = '\0'; // terminate the string
+            totalReceived = ndx;
+            ndx = 0;
+            newData = true;
+        }
+    }
+}
+
+void showNewData() {
+    if (newData == true) {
+        // Serial.print("This just in ... ");
+        // Serial.println(receivedChars);
+        newData = false;
+        lcd.clear();
+        for(int i = 0; i < totalReceived; i++){
+          lcd.setCursor(0, 0);
+          lcd.print(receivedChars[i]);
+          delay(300);
+        }
+        totalReceived = 0;
+    }
+}
+
+void ready(){
+	Serial.println("<Ready>");
+}
 
 void setup() {
-  Serial.begin(9600);
-  lcd.begin(lcdWidth, lcdHeight);
-  hello(5000, GLYPHDUINO_HEART);
-  int pos[2] = {5 ,6};
-  scrollLine(line2, line1, 1, pos, GLYPHDUINO_HEART);
-
-	StaticJsonBuffer<200> jsonBuffer;
-	char json[] =
-      "{\"sensor\":\"gps\",\"time\":1351824120,\"data\":[48.756080,2.302038]}";
-			JsonObject& root = jsonBuffer.parseObject(json);
-
-  // Test if parsing succeeds.
-  if (!root.success()) {
-    Serial.println("parseObject() failed");
-    return;
-  }
-
-	const char* sensor = root["sensor"];
-  long time = root["time"];
-  double latitude = root["data"][0];
-  double longitude = root["data"][1];
-
-  // Print values.
-  Serial.println(sensor);
-  Serial.println(time);
-  Serial.println(latitude, 6);
-  Serial.println(longitude, 6);
-
+    Serial.begin(9600);
+    Serial.println("<Arduino is ready>");
+    lcd.begin(lcdWidth, lcdHeight);
 }
 
 void loop() {
-  if (Serial.available()) {
-    lcd.clear();
-    lcd.setCursor(16, 1);
-    lcd.print(1);
-    lcd.setCursor(16, 0);
-    delay(100);  //wait some time for the data to fully be read
-    // lcd.clear();
-    lcd.autoscroll();
-    while (Serial.available() > 0) {
-      char c = Serial.read();
-      lcd.print(c);
-      delay(300);
-    }
-    lcd.noAutoscroll();
-    // lcd.clear();
-  }
+    recvWithEndMarker();
+    showNewData();
+		ready();
 }
