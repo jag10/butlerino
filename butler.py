@@ -14,6 +14,19 @@ import schedule
 
 msgs = []
 
+def sendString(string):
+    line = ''
+    while line != '<Ready>':
+        line = s.readline()
+        line = str(line.strip().decode('utf-8'))
+        print(line)
+        time.sleep(1)
+
+    string = string.strip()
+    string += '\n'
+    s.write(string.encode('ascii'))
+    time.sleep(5)
+
 # decorator
 def logger(func):
     @functools.wraps(func)
@@ -61,26 +74,22 @@ def git():
     output = ps.communicate()[0]
     return str(int(output))
 
-# print(get_weather("albacete"))
-# print(news('http://nytimes.com'))
-# print(git())
+if __name__ == '__main__':
+    s = serial.Serial("/dev/tty.usbmodem1421", 9600) #port is 11 (for COM12, and baud rate is 9600
+    time.sleep(2)    #wait for the Serial to initialize
 
-schedule.every().second.do(comm)
-schedule.every(5).seconds.do(git)
-schedule.every(5).seconds.do(get_weather, "albacete")
+    schedule.every().second.do(comm)
+    schedule.every(5).seconds.do(git)
+    schedule.every(5).seconds.do(get_weather, "albacete")
 
-while True:
-    schedule.run_pending()
-    time.sleep(1)
+    jsonStr = '{"one" : "1", "two" : "2", "three" : "3"}'
 
-# s = serial.Serial("/dev/tty.usbmodem1421", 9600) #port is 11 (for COM12, and baud rate is 9600
-# time.sleep(2)    #wait for the Serial to initialize
-# s.write(b'Ready. ' + str(int(output)))
+    data = '111111112222222222223333333333444444444444445555555555556666666667777777778888888899999'
+    easy = 'hi there'
+
+    sendString(easy)
+    sendString(data)
+
 # while True:
-#     string = raw_input('Enter text: ')
-#     string = string.strip()
-#     if string == 'exit' :
-#         break
-#     if string == 'git':
-#         s.write(str(int(output)) + " ")
-#     s.write(string)
+#     schedule.run_pending()
+#     time.sleep(1)
