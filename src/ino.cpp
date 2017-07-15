@@ -34,7 +34,6 @@ void printSymbol(int pos, uint8_t glyphId){
 
 void printStaticLine(String json){
 	lcd.setCursor(0, 1);
-	// StaticJsonBuffer<200> jsonBuffer;
 	const size_t bufferSize = 2*JSON_OBJECT_SIZE(3) + 150;
 	DynamicJsonBuffer jsonBuffer(bufferSize);
 	JsonObject& root = jsonBuffer.parseObject(json);
@@ -57,12 +56,7 @@ void scrollLine(String json, String scrollingLine, int reps, int pos[], uint8_t 
     lcd.setCursor(scrollCursor, 0);
     lcd.print(scrollingLine.substring(stringStart, stringStop));
     lcd.setCursor(0, 1);
-    // lcd.print(staticLine);
     printStaticLine(json);
-    // for(int j = 0; j <= sizeof(pos)/sizeof(pos[0]); j++){
-    //   printSymbol(pos[j], glyphId);
-    // }
-    // lcd.setCursor(0, 1);
     delay(300);
     if(stringStart == 0 && scrollCursor > 0){
       scrollCursor--;
