@@ -280,6 +280,17 @@ void Glyphduino::getGlyph(uint8_t glyphId, unsigned char* array)
 			array[6] = 0b00000;
 			array[7] = 0b00000;
 			break;
+
+		case GLYPHDUINO_GITHUB:
+			array[0] = 0b10001;
+			array[1] = 0b01110;
+			array[2] = 0b01110;
+			array[3] = 0b01110;
+			array[4] = 0b00100;
+			array[5] = 0b10100;
+			array[6] = 0b01100;
+			array[7] = 0b00100;
+			break;
 	}
 }
 
