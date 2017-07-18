@@ -26,56 +26,16 @@ byte celsius[8] = {
 	B10000,	B01111,	B01000,	B01000,	B01000,	B01000,	B01000,	B01111
 };
 
-void printSymbol(int pos, uint8_t glyphId){
-	glyph->registerGlyph(0, glyphId);
-	lcd.setCursor(pos, 1);
-  glyph->printGlyph(glyphId);
-}
+const int numChars = 256;
+String receivedChars = "";   // an array to store the received data
 
-void printStaticLine(String json){
-	lcd.setCursor(0, 1);
-	const size_t bufferSize = 2*JSON_OBJECT_SIZE(3) + 150;
-	DynamicJsonBuffer jsonBuffer(bufferSize);
-	JsonObject& root = jsonBuffer.parseObject(json);
+boolean newData = false;
+int totalReceived = 0;
 
-  // Test if parsing succeeds.
-  if (!root.success()) {
-    Serial.println("parseObject() failed");
-		lcd.print("json error");
-		lcd.print(bufferSize);
-    return;
-  }
-	const char* staticLine = root["staticLine"];
-	lcd.print(staticLine);
-}
-
-
-void scrollLine(String json, String scrollingLine, int reps, int pos[], uint8_t glyphId){
-  int i = 0;
-  while (i < scrollingLine.length() * reps){
-    lcd.setCursor(scrollCursor, 0);
-    lcd.print(scrollingLine.substring(stringStart, stringStop));
-    lcd.setCursor(0, 1);
-    printStaticLine(json);
-    delay(300);
-    if(stringStart == 0 && scrollCursor > 0){
-      scrollCursor--;
-      stringStop++;
-    } else if (stringStart == stringStop){
-      stringStart = stringStop = 0;
-      scrollCursor = lcdWidth;
-    } else if (stringStop == scrollingLine.length() && scrollCursor == 0) {
-      stringStart++;
-    } else {
-      stringStart++;
-      stringStop++;
-    }
-    i++;
-    // lcd.clear();
-  }
-  delay(300);
-  lcd.setCursor(0, 0);
-  lcd.print(scrollingLine);
+int freeRam () {
+  extern int __heap_start, *__brkval;
+  int v;
+  return (int) &v - (__brkval == 0 ? (int) &__heap_start : (int) __brkval);
 }
 
 /**
@@ -102,56 +62,88 @@ void hello(int time, uint8_t glyphId) {
   lcd.clear();
 }
 
-int freeRam () {
-  extern int __heap_start, *__brkval;
-  int v;
-  return (int) &v - (__brkval == 0 ? (int) &__heap_start : (int) __brkval);
+void printStaticLine(){
+	const size_t bufferSize = 2*JSON_OBJECT_SIZE(3) + 160;
+	DynamicJsonBuffer jsonBuffer(bufferSize);
+	JsonObject& root = jsonBuffer.parseObject(receivedChars);
+
+  // Test if parsing succeeds.
+  if (!root.success()) {
+    Serial.println("error: parseObject() failed: " + receivedChars);
+		lcd.print("json error");
+		lcd.print(bufferSize);
+    return;
+  }
+	const char* staticLine = root["staticLine"];
+	lcd.setCursor(0, 1);
+	lcd.print(staticLine);
+
+	totalReceived = 0;
+	receivedChars.remove(0);
 }
 
-
-const byte numChars = 128;
-char receivedChars[numChars];   // an array to store the received data
-
-boolean newData = false;
-byte totalReceived = 0;
-
-void recvWithEndMarker() {
-    static byte ndx = 0;
-    char endMarker = '\n';
-    char rc;
-
-    while (Serial.available() > 0 && newData == false) {
-        rc = Serial.read();
-
-        if (rc != endMarker) {
-            receivedChars[ndx] = rc;
-            ndx++;
-            if (ndx >= numChars) {
-                ndx = numChars - 1;
-            }
-        }
-        else {
-            receivedChars[ndx] = '\0'; // terminate the string
-            totalReceived = ndx;
-            ndx = 0;
-            newData = true;
-        }
+void scrollLine(String scrollingLine, int reps, int pos[], uint8_t glyphId){
+  int i = 0;
+  while (i < scrollingLine.length() * reps){
+    lcd.setCursor(scrollCursor, 0);
+    lcd.print(scrollingLine.substring(stringStart, stringStop));
+    lcd.setCursor(0, 1);
+    printStaticLine();
+    delay(300);
+    if(stringStart == 0 && scrollCursor > 0){
+      scrollCursor--;
+      stringStop++;
+    } else if (stringStart == stringStop){
+      stringStart = stringStop = 0;
+      scrollCursor = lcdWidth;
+    } else if (stringStop == scrollingLine.length() && scrollCursor == 0) {
+      stringStart++;
+    } else {
+      stringStart++;
+      stringStop++;
     }
+    i++;
+    // lcd.clear();
+  }
+  delay(300);
+  lcd.setCursor(0, 0);
+  lcd.print(scrollingLine);
+}
+
+int recvWithEndMarker() {
+  static int ndx = 0;
+  char endMarker = '\n';
+  char rc;
+
+  while (Serial.available() > 0 && newData == false) {
+      rc = Serial.read();
+      if (rc != endMarker) {
+          receivedChars[ndx] = rc;
+          receivedChars += rc;
+          ndx++;
+          if (ndx >= numChars) {
+              ndx = numChars - 1;
+          }
+      }
+      else {
+          // receivedChars[ndx] = '\0'; // terminate the string
+          // receivedChars += '\0';
+          totalReceived = ndx;
+          // ndx = 0;
+          newData = true;
+      }
+  }
+	return ndx;
 }
 
 void showNewData() {
-    if (newData == true) {
-        // Serial.print("This just in ... ");
-        // Serial.println(receivedChars);
-        newData = false;
-        lcd.clear();
-        for(int i = 0; i < totalReceived; i++){
-          lcd.setCursor(0, 0);
-          lcd.print(receivedChars[i]);
-          delay(300);
-        }
-        totalReceived = 0;
-    }
+  lcd.clear();
+	Serial.println("error:" + receivedChars);
+  for(int i = 0; i < receivedChars.length(); i++){
+    lcd.setCursor(0, 0);
+    lcd.print(receivedChars[i]);
+    delay(300);
+  }
 }
 
 void ready(){
@@ -159,13 +151,19 @@ void ready(){
 }
 
 void setup() {
-    Serial.begin(9600);
-    Serial.println("<Arduino is ready>");
-    lcd.begin(lcdWidth, lcdHeight);
+  Serial.begin(9600);
+  Serial.println("<Arduino is ready>");
+  lcd.begin(lcdWidth, lcdHeight);
 }
 
 void loop() {
-    recvWithEndMarker();
-    showNewData();
-		ready();
+  int bytesReceived = recvWithEndMarker();
+  if(bytesReceived > 0 && newData == true){
+		newData = false;
+		// showNewData();
+		printStaticLine();
+		totalReceived = 0;
+		receivedChars.remove(0);
+	}
+	ready();
 }

@@ -5,6 +5,7 @@ import serial
 import time
 import subprocess
 import functools
+import json
 
 import requests
 
@@ -82,13 +83,28 @@ if __name__ == '__main__':
     schedule.every(5).seconds.do(git)
     schedule.every(5).seconds.do(get_weather, "albacete")
 
-    jsonStr = '{"one" : "1", "two" : "2", "three" : "3"}'
+    json_mock = {
+    	"scrollingLine": "Turkey marks anniversary of failed coup with mass rallies",
+    	"staticLine": "26            12",
+    	"symbols": {
+    		"2": "celsius",
+    		"3": "cloud",
+    		"13": "github"
+    	}
+    }
+    print(json.dumps(json_mock))
 
-    data = '111111112222222222223333333333444444444444445555555555556666666667777777778888888899999'
+    jsonStr = '{"one": "uno", "staticLine": "linea estatica"}'
+
     easy = 'hi there'
 
-    sendString(easy)
-    sendString(data)
+    sendString(json.dumps(json_mock))
+
+    while True:
+        line = s.readline()
+        line = str(line.strip().decode('utf-8'))
+        if "error" in line:
+            print(line)
 
 # while True:
 #     schedule.run_pending()
