@@ -16,15 +16,10 @@ String weather = "26";
 int stringStart, stringStop = 0;
 int scrollCursor = lcdWidth;
 
-byte cloud[8] = {
-	B00000, B00110,	B01111, B11111, B00000, B00000,	B00000, B00000
-};
 byte sun[8] = {
 	B10001,	B01010,	B00000,	B01110,	B01110,	B00000,	B01010,	B10001
 };
-byte celsius[8] = {
-	B10000,	B01111,	B01000,	B01000,	B01000,	B01000,	B01000,	B01111
-};
+
 
 const int numChars = 256;
 String receivedChars = "";   // an array to store the received data
