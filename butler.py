@@ -86,13 +86,13 @@ if __name__ == '__main__':
     json_mock = {
     	"scrollingLine": "Turkey marks anniversary of failed coup with mass rallies",
     	"staticLine": "26            12",
-    	"symbols": {
-    		"2": "celsius",
-    		"3": "cloud",
-    		"13": "github"
+    	"glyphs": {
+    		"2": 24,
+    		"3": 25,
+    		"13": 23
     	}
     }
-    print(json.dumps(json_mock))
+    # print(json.dumps(json_mock))
 
     jsonStr = '{"one": "uno", "staticLine": "linea estatica"}'
 
@@ -103,7 +103,7 @@ if __name__ == '__main__':
     while True:
         line = s.readline()
         line = str(line.strip().decode('utf-8'))
-        if "error" in line:
+        if "error" in line or "debug" in line:
             print(line)
 
 # while True:

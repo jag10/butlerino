@@ -57,6 +57,28 @@ void hello(int time, uint8_t glyphId) {
   lcd.clear();
 }
 
+void printGlyphs(){
+	const size_t bufferSize = 2*JSON_OBJECT_SIZE(3) + 160;
+	DynamicJsonBuffer jsonBuffer(bufferSize);
+	JsonObject& root = jsonBuffer.parseObject(receivedChars);
+
+  // Test if parsing succeeds.
+  if (!root.success()) {
+    Serial.println("error: parseObject() failed: " + receivedChars);
+    return;
+  }
+	JsonObject& glyphs = root["glyphs"];
+
+	for(int i = 0; i < lcdWidth; i++){
+		int glyphId = glyphs[String(i)];
+		if(glyphId > 0){
+			// Serial.println("debug: " + String(glyphId));
+			lcd.setCursor(i, 1);
+			glyph->printGlyph(glyphId);
+			}
+		}
+}
+
 void printStaticLine(){
 	const size_t bufferSize = 2*JSON_OBJECT_SIZE(3) + 160;
 	DynamicJsonBuffer jsonBuffer(bufferSize);
@@ -65,19 +87,28 @@ void printStaticLine(){
   // Test if parsing succeeds.
   if (!root.success()) {
     Serial.println("error: parseObject() failed: " + receivedChars);
-		lcd.print("json error");
-		lcd.print(bufferSize);
-    return;
   }
 	const char* staticLine = root["staticLine"];
 	lcd.setCursor(0, 1);
 	lcd.print(staticLine);
-
-	totalReceived = 0;
-	receivedChars.remove(0);
+	printGlyphs();
 }
 
-void scrollLine(String scrollingLine, int reps, int pos[], uint8_t glyphId){
+String getScrollingLine(){
+	const size_t bufferSize = 2*JSON_OBJECT_SIZE(3) + 160;
+	DynamicJsonBuffer jsonBuffer(bufferSize);
+	JsonObject& root = jsonBuffer.parseObject(receivedChars);
+
+  // Test if parsing succeeds.
+  if (!root.success()) {
+    Serial.println("error: parseObject() failed: " + receivedChars);
+    return;
+  }
+	String scrollingLine = root["scrollingLine"];
+	return scrollingLine;
+}
+
+void printScrollingLine(String scrollingLine, int reps){
   int i = 0;
   while (i < scrollingLine.length() * reps){
     lcd.setCursor(scrollCursor, 0);
@@ -103,6 +134,7 @@ void scrollLine(String scrollingLine, int reps, int pos[], uint8_t glyphId){
   delay(300);
   lcd.setCursor(0, 0);
   lcd.print(scrollingLine);
+	printStaticLine();
 }
 
 int recvWithEndMarker() {
@@ -145,10 +177,26 @@ void ready(){
 	Serial.println("<Ready>");
 }
 
+String getStaticLine(){
+	const size_t bufferSize = 2*JSON_OBJECT_SIZE(3) + 160;
+	DynamicJsonBuffer jsonBuffer(bufferSize);
+	JsonObject& root = jsonBuffer.parseObject(receivedChars);
+
+  // Test if parsing succeeds.
+  if (!root.success()) {
+    Serial.println("error: parseObject() failed: " + receivedChars);
+    return;
+  }
+	return root["staticLine"];
+}
+
 void setup() {
   Serial.begin(9600);
   Serial.println("<Arduino is ready>");
   lcd.begin(lcdWidth, lcdHeight);
+	glyph->registerGlyph(0, GLYPHDUINO_GITHUB);
+	glyph->registerGlyph(1, GLYPHDUINO_CELSIUS);
+	glyph->registerGlyph(2, GLYPHDUINO_CLOUD);
 }
 
 void loop() {
@@ -156,7 +204,8 @@ void loop() {
   if(bytesReceived > 0 && newData == true){
 		newData = false;
 		// showNewData();
-		printStaticLine();
+		// printStaticLine();
+		printScrollingLine(getScrollingLine(), 2);
 		totalReceived = 0;
 		receivedChars.remove(0);
 	}
