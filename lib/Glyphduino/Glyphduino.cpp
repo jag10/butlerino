@@ -293,23 +293,23 @@ void Glyphduino::getGlyph(uint8_t glyphId, unsigned char* array)
 			break;
 
 		case GLYPHDUINO_CELSIUS:
-				array[0] = 0b10000;
-				array[1] = 0b01111;
-				array[2] = 0b01000;
-				array[3] = 0b01000;
-				array[4] = 0b01000;
-				array[5] = 0b01000;
-				array[6] = 0b01000;
-				array[7] = 0b01111;
+				array[0] = 0b11000;
+				array[1] = 0b11000;
+				array[2] = 0b00111;
+				array[3] = 0b00100;
+				array[4] = 0b00100;
+				array[5] = 0b00100;
+				array[6] = 0b00111;
+				array[7] = 0b00000;
 			break;
 
 		case GLYPHDUINO_CLOUD:
 				array[0] = 0b00000;
-				array[1] = 0b00110;
-				array[2] = 0b01111;
-				array[3] = 0b11111;
-				array[4] = 0b00000;
-				array[5] = 0b00000;
+				array[1] = 0b00000;
+				array[2] = 0b00110;
+				array[3] = 0b01111;
+				array[4] = 0b11111;
+				array[5] = 0b11111;
 				array[6] = 0b00000;
 				array[7] = 0b00000;
 	}
