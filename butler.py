@@ -15,6 +15,15 @@ import schedule
 
 msgs = []
 
+LOCATION = "Albacete"
+NEWS_SOURCE = "http://www.bbc.com/news"
+
+def comm():
+    if len(msgs) > 0:
+        msg = msgs.pop(0)
+        print("sending: ", msg)
+        sendString(msg)
+
 def sendString(string):
     line = ''
     while line != '<Ready>':
@@ -36,29 +45,10 @@ def logger(func):
         result = func(*args, **kwargs)
         # print('LOG: Job "%s" completed' % func.__name__)
         msgs.append(result)
-        # print('Result: ', result)
         return result
     return wrapper
 
-def comm():
-    if len(msgs) > 0:
-        print("popeando bro")
-        print(msgs.pop(0))
-    # TODO: send serial msg
-
-@logger
-def get_weather(location):
-    q = 'select item.condition from weather.forecast where woeid in (select woeid from geo.places(1) where text="'+location+'")'
-    baseurl = "https://query.yahooapis.com/v1/public/yql"
-
-    payload = {'q': q, 'format': 'json'}
-    r = requests.get(baseurl, params=payload)
-    r = r.json()
-    temp_f = float(r['query']['results']['channel']['item']['condition']['temp'])
-    temp_c = (temp_f - 32) * 5/9
-    condition = str(r['query']['results']['channel']['item']['condition']['text'])
-
-    return (temp_f, temp_c, condition)
+# SCROLLING LINE FUNCTIONS
 
 @logger
 def news(source):
@@ -66,46 +56,76 @@ def news(source):
     first_article = paper.articles[0]
     first_article.download()
     first_article.parse()
-    return first_article.title
+    json_str = staticLine(first_article.title)
+    # msgs.append(json_str)
+    return json_str
 
-@logger
+# TODO: twitter
+
+# STATIC LINE FUNCTIONS
+
+# https://developer.yahoo.com/weather/
+def get_weather(location):
+    q = 'select item.condition from weather.forecast where woeid in (select woeid from geo.places(1) where text="'+location+'")'
+    baseurl = "https://query.yahooapis.com/v1/public/yql"
+
+    payload = {'q': q, 'format': 'json'}
+    r = requests.get(baseurl, params=payload)
+    r = r.json()
+    temp_f = int(r['query']['results']['channel']['item']['condition']['temp'])
+    temp_c = int((temp_f - 32) * 5/9)
+    condition = str(r['query']['results']['channel']['item']['condition']['text']).lower()
+    condition = "sun"
+    if "cloud" in condition:
+        condition = 25 # GLYPHDUINO_CLOUD
+    elif "clear" in condition or "sun" in condition:
+        condition = 26 # GLYPHDUINO_SUN
+    elif "rain" in condition or "snow" in condition or "shower" in condition or "storm" in condition:
+        condition = 27 # GLYPDUINO_RAIN
+    else:
+        condition = "?"
+    return (temp_f, temp_c, condition)
+
 def git():
-    cmd = "git log --since='week' --oneline | wc -l"
+    cmd = "git log --since='7d' --oneline | wc -l"
     ps = subprocess.Popen(cmd,shell=True,stdout=subprocess.PIPE,stderr=subprocess.STDOUT)
     output = ps.communicate()[0]
-    return str(int(output))
+    return str(int(output)).zfill(2)
 
-if __name__ == '__main__':
-    s = serial.Serial("/dev/tty.usbmodem1421", 9600) #port is 11 (for COM12, and baud rate is 9600
-    time.sleep(2)    #wait for the Serial to initialize
-
-    schedule.every().second.do(comm)
-    schedule.every(5).seconds.do(git)
-    schedule.every(5).seconds.do(get_weather, "albacete")
-
+def staticLine(scrollingLine):
+    temp_f, temp_c, condition = get_weather(LOCATION)
+    commits = git()
     json_mock = {
-    	"scrollingLine": "Turkey marks anniversary of failed coup with mass rallies",
-    	"staticLine": "26            12",
+    	# "scrollingLine": "Turkey marks anniversary of failed coup with mass rallies",
+    	"scrollingLine": scrollingLine,
+    	"staticLine": " " + str(temp_c) + "           " + str(commits),
     	"glyphs": {
-    		"2": 24,
-    		"3": 25,
-    		"13": 23
+    		"0": condition,
+    		"3": 24, # GLYPHDUINO_CELSIUS
+    		"13": 23 # GLYPHDUINO_GITHUB
     	}
     }
-    # print(json.dumps(json_mock))
+    return json.dumps(json_mock)
 
-    jsonStr = '{"one": "uno", "staticLine": "linea estatica"}'
+if __name__ == '__main__':
+    s = serial.Serial("/dev/tty.usbmodem1421", 9600)
+    time.sleep(2)    # wait for the Serial to initialize
 
-    easy = 'hi there'
+    news(NEWS_SOURCE)
+    comm()
+    # schedule.every(60).seconds.do(news, NEWS_SOURCE)
+    # schedule.every().second.do(comm)
+    #
+    # while True:
+    #     schedule.run_pending()
+    #     time.sleep(1)
 
-    sendString(json.dumps(json_mock))
-
-    while True:
-        line = s.readline()
-        line = str(line.strip().decode('utf-8'))
-        if "error" in line or "debug" in line:
-            print(line)
-
-# while True:
-#     schedule.run_pending()
-#     time.sleep(1)
+    # UNCOMMENT FOR DEBUG INFO
+    # while True:
+    #     try:
+    #         line = s.readline()
+    #         line = str(line.strip().decode('utf-8'))
+    #         if "error" in line or "debug" in line:
+    #             print(line)
+    #     except Exception:
+    #         print("error while reading from serial")
