@@ -14,8 +14,6 @@ const int numChars = 256;
 
 const int lcdWidth = 16;
 const int lcdHeight = 2;
-// int scrollCursor = lcdWidth;
-// int stringStart, stringStop = 0;
 
 String receivedChars = "";   // an array to store the received data
 boolean newData = false;
@@ -138,7 +136,6 @@ void printScrollingLine(String scrollingLine, int reps){
         stringStop++;
       }
       i++;
-      // lcd.clear();
     }
     delay(BUTLERINO_DELAY_BETWEEN_REPS);
     clearLine(0);
@@ -216,8 +213,6 @@ void loop() {
   int bytesReceived = recvWithEndMarker();
   if(bytesReceived > 0 && newData == true){
 		newData = false;
-		// showNewData();
-		// printStaticLine();
 		printScrollingLine(getScrollingLine(), 2);
 		totalReceived = 0;
 		receivedChars.remove(0);
