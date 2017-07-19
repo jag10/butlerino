@@ -1,3 +1,3 @@
-# BUTLERINO_SCROLLING_DELAY
+# Butlerino
 ## Butler + Arduino !
-![butlerino](assets/butlerino.min.jpg)
+![butlerino](assets/butlerino.jpg)
