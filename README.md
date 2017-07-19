@@ -8,24 +8,30 @@
 ![butlerino](assets/butlerino.jpg)
 
 
-## Samples
-### Innovation radar & Choropleth map
-<img alt="innovation radar" src="/samples/innovation_radar.png" width="400"><img alt="Choropleth map" src="/samples/choropleth.png" width="450">
-<!--![Choropleth map](/samples/choropleth.png)-->
-
 ## Installation
 
-You need to install the required libraries: matplotlib, numpy, geopandas, csv
+You need to install the required libraries: requests, newspaper, schedule
 
 ## Usage example
 
+* Use platform.io to upload code to Arduino. You can use Arduino IDE too.
 ```sh
-python3.5 radar.py
+python3 butler.py
 ```
+## Functions
+* Weather
+* emails (todo)
+* Git commits in the last day/week
+* News from any online newspaper
+* Tweets from the desired account (todo)
 
 ## Development setup
 
-You need to install the required libraries: matplotlib, numpy, geopandas, csv
+You need to install the required libraries: requests, newspaper, schedule
+
+## Credits
+* [Glyphduino](http://rastating.github.io/Glyphduino/)
+* [ArduinoJson](https://github.com/bblanchon/ArduinoJson)
 
 ## Contributing
 
@@ -44,7 +50,7 @@ You need to install the required libraries: matplotlib, numpy, geopandas, csv
 
 ## Meta
 
-Jeferson Arboleda – me@jglab.me
+Jeferson Arboleda – me@jarboleda.me - https://www.jarboleda.me
 
 Distributed under the MIT license. See ``LICENSE`` for more information.
 
