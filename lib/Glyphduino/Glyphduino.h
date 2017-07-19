@@ -43,6 +43,8 @@ const uint8_t GLYPHDUINO_PI = 22;
 const uint8_t GLYPHDUINO_GITHUB = 23;
 const uint8_t GLYPHDUINO_CELSIUS = 24;
 const uint8_t GLYPHDUINO_CLOUD = 25;
+const uint8_t GLYPHDUINO_SUN = 26;
+const uint8_t GLYPHDUINO_RAIN = 27;
 
 class Glyphduino
 {
