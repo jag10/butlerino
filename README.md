@@ -29,6 +29,10 @@ python3 butler.py
 
 You need to install the required libraries: requests, newspaper, schedule
 
+## Credits
+[Glyphduino](http://rastating.github.io/Glyphduino/)
+[ArduinoJson](https://github.com/bblanchon/ArduinoJson)
+
 ## Contributing
 
 1. Fork it!
