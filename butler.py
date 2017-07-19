@@ -75,7 +75,6 @@ def get_weather(location):
     temp_f = int(r['query']['results']['channel']['item']['condition']['temp'])
     temp_c = int((temp_f - 32) * 5/9)
     condition = str(r['query']['results']['channel']['item']['condition']['text']).lower()
-    condition = "sun"
     if "cloud" in condition:
         condition = 25 # GLYPHDUINO_CLOUD
     elif "clear" in condition or "sun" in condition:
@@ -95,14 +94,16 @@ def git():
 def staticLine(scrollingLine):
     temp_f, temp_c, condition = get_weather(LOCATION)
     commits = git()
+    emails = "0"
     json_mock = {
-    	# "scrollingLine": "Turkey marks anniversary of failed coup with mass rallies",
+    	# "scrollingLine": "Lincoln: The war has begun",
     	"scrollingLine": scrollingLine,
-    	"staticLine": " " + str(temp_c) + "           " + str(commits),
+    	"staticLine": " " + str(temp_c) + "   " + emails + "       " + str(commits),
     	"glyphs": {
     		"0": condition,
     		"3": 24, # GLYPHDUINO_CELSIUS
-    		"13": 23 # GLYPHDUINO_GITHUB
+    		"13": 23, # GLYPHDUINO_GITHUB
+            "5": 11 # GLYPHDUINO_BELL
     	}
     }
     return json.dumps(json_mock)
