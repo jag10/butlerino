@@ -7,23 +7,17 @@
 LiquidCrystal lcd(8, 13, 9, 4, 5, 6, 7);
 Glyphduino* glyph = new Glyphduino(&lcd);
 
-
-int lcdWidth = 16;
-int lcdHeight = 2;
-String line1 = "Hey, I'm Devy. twat";
-String line2 = "Devy    you"; // <3
-String weather = "26";
-int stringStart, stringStop = 0;
-int scrollCursor = lcdWidth;
-
-byte sun[8] = {
-	B10001,	B01010,	B00000,	B01110,	B01110,	B00000,	B01010,	B10001
-};
-
+const uint16_t BUTLERINO_SCROLLING_DELAY = 400;
+const uint16_t BUTLERINO_DELAY_BETWEEN_REPS = 2000;
 
 const int numChars = 256;
-String receivedChars = "";   // an array to store the received data
 
+const int lcdWidth = 16;
+const int lcdHeight = 2;
+// int scrollCursor = lcdWidth;
+// int stringStart, stringStop = 0;
+
+String receivedChars = "";   // an array to store the received data
 boolean newData = false;
 int totalReceived = 0;
 
@@ -70,13 +64,18 @@ void printGlyphs(){
 	JsonObject& glyphs = root["glyphs"];
 
 	for(int i = 0; i < lcdWidth; i++){
-		int glyphId = glyphs[String(i)];
-		if(glyphId > 0){
-			// Serial.println("debug: " + String(glyphId));
-			lcd.setCursor(i, 1);
-			glyph->printGlyph(glyphId);
+		lcd.setCursor(i, 1);
+		if(glyphs[String(i)] == "?"){
+			lcd.print("?");
+		}
+		else{
+			int glyphId = glyphs[String(i)];
+			if(glyphId > 0){
+				// Serial.println("debug: " + String(glyphId));
+				glyph->printGlyph(glyphId);
 			}
 		}
+	}
 }
 
 void printStaticLine(){
@@ -108,30 +107,42 @@ String getScrollingLine(){
 	return scrollingLine;
 }
 
-void printScrollingLine(String scrollingLine, int reps){
-  int i = 0;
-  while (i < scrollingLine.length() * reps){
-    lcd.setCursor(scrollCursor, 0);
-    lcd.print(scrollingLine.substring(stringStart, stringStop));
-    lcd.setCursor(0, 1);
-    printStaticLine();
-    delay(300);
-    if(stringStart == 0 && scrollCursor > 0){
-      scrollCursor--;
-      stringStop++;
-    } else if (stringStart == stringStop){
-      stringStart = stringStop = 0;
-      scrollCursor = lcdWidth;
-    } else if (stringStop == scrollingLine.length() && scrollCursor == 0) {
-      stringStart++;
-    } else {
-      stringStart++;
-      stringStop++;
-    }
-    i++;
-    // lcd.clear();
+void clearLine(int line){
+  for(int i = 0; i < lcdWidth; i++){
+    lcd.setCursor(i, line);
+    lcd.print(" ");
   }
-  delay(300);
+}
+
+void printScrollingLine(String scrollingLine, int reps){
+  for(int j = 0; j < reps; j++){
+    int i = 0;
+    int stringStart = 0; int stringStop = 0;
+    int scrollCursor = lcdWidth;
+    while (i < scrollingLine.length() + 1){
+      lcd.setCursor(scrollCursor, 0);
+      lcd.print(scrollingLine.substring(stringStart, stringStop));
+      lcd.setCursor(0, 1);
+      printStaticLine();
+      delay(BUTLERINO_SCROLLING_DELAY);
+      if(stringStart == 0 && scrollCursor > 0){
+        scrollCursor--;
+        stringStop++;
+      } else if (stringStart == stringStop){
+        stringStart = stringStop = 0;
+        scrollCursor = lcdWidth;
+      } else if (stringStop == scrollingLine.length() && scrollCursor == 0) {
+        stringStart++;
+      } else {
+        stringStart++;
+        stringStop++;
+      }
+      i++;
+      // lcd.clear();
+    }
+    delay(BUTLERINO_DELAY_BETWEEN_REPS);
+    clearLine(0);
+  }
   lcd.setCursor(0, 0);
   lcd.print(scrollingLine);
 	printStaticLine();
@@ -197,6 +208,8 @@ void setup() {
 	glyph->registerGlyph(0, GLYPHDUINO_GITHUB);
 	glyph->registerGlyph(1, GLYPHDUINO_CELSIUS);
 	glyph->registerGlyph(2, GLYPHDUINO_CLOUD);
+  glyph->registerGlyph(3, GLYPHDUINO_RAIN);
+  glyph->registerGlyph(3, GLYPHDUINO_SUN);
 }
 
 void loop() {
