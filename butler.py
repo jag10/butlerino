@@ -17,12 +17,15 @@ msgs = []
 
 LOCATION = "Albacete"
 NEWS_SOURCE = "http://www.bbc.com/news"
+ARDUINO_PORT = "/dev/tty.usbmodem1421"
+
 
 def comm():
     if len(msgs) > 0:
         msg = msgs.pop(0)
         print("sending: ", msg)
         sendString(msg)
+
 
 def sendString(string):
     line = ''
@@ -65,51 +68,59 @@ def news(source):
 # STATIC LINE FUNCTIONS
 
 # https://developer.yahoo.com/weather/
+
+
 def get_weather(location):
-    q = 'select item.condition from weather.forecast where woeid in (select woeid from geo.places(1) where text="'+location+'")'
+    q = 'select item.condition from weather.forecast where woeid in (select woeid from geo.places(1) where text="' + \
+        location + '")'
     baseurl = "https://query.yahooapis.com/v1/public/yql"
 
     payload = {'q': q, 'format': 'json'}
     r = requests.get(baseurl, params=payload)
     r = r.json()
     temp_f = int(r['query']['results']['channel']['item']['condition']['temp'])
-    temp_c = int((temp_f - 32) * 5/9)
-    condition = str(r['query']['results']['channel']['item']['condition']['text']).lower()
+    temp_c = int((temp_f - 32) * 5 / 9)
+    condition = str(r['query']['results']['channel']
+                    ['item']['condition']['text']).lower()
     if "cloud" in condition:
-        condition = 25 # GLYPHDUINO_CLOUD
+        condition = 25  # GLYPHDUINO_CLOUD
     elif "clear" in condition or "sun" in condition:
-        condition = 26 # GLYPHDUINO_SUN
+        condition = 26  # GLYPHDUINO_SUN
     elif "rain" in condition or "snow" in condition or "shower" in condition or "storm" in condition:
-        condition = 27 # GLYPDUINO_RAIN
+        condition = 27  # GLYPDUINO_RAIN
     else:
         condition = "?"
     return (temp_f, temp_c, condition)
 
+
 def git():
     cmd = "git log --since='7d' --oneline | wc -l"
-    ps = subprocess.Popen(cmd,shell=True,stdout=subprocess.PIPE,stderr=subprocess.STDOUT)
+    ps = subprocess.Popen(
+        cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     output = ps.communicate()[0]
     return str(int(output)).zfill(2)
+
 
 def staticLine(scrollingLine):
     temp_f, temp_c, condition = get_weather(LOCATION)
     commits = git()
     emails = "0"
     json_mock = {
-    	# "scrollingLine": "Lincoln: The war has begun",
-    	"scrollingLine": scrollingLine,
-    	"staticLine": " " + str(temp_c) + "   " + emails + "       " + str(commits),
-    	"glyphs": {
-    		"0": condition,
-    		"3": 24, # GLYPHDUINO_CELSIUS
-    		"13": 23, # GLYPHDUINO_GITHUB
-            "5": 11 # GLYPHDUINO_BELL
-    	}
+        "scrollingLine": "Lincoln: The war has begun",
+        # "scrollingLine": scrollingLine,
+        "staticLine": " " + str(temp_c) + "   " + emails + "       " + str(commits),
+        "glyphs": {
+            "0": condition,
+            "3": 24,  # GLYPHDUINO_CELSIUS
+            "13": 23,  # GLYPHDUINO_GITHUB
+            "5": 11  # GLYPHDUINO_BELL
+        }
     }
     return json.dumps(json_mock)
 
+
 if __name__ == '__main__':
-    s = serial.Serial("/dev/tty.usbmodem1421", 9600)
+    s = serial.Serial(ARDUINO_PORT, 9600)
     time.sleep(2)    # wait for the Serial to initialize
 
     news(NEWS_SOURCE)
