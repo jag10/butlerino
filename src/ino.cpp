@@ -19,36 +19,114 @@ String receivedChars = "";   // an array to store the received data
 boolean newData = false;
 int totalReceived = 0;
 
+/**
+    Gets free ram on Arduino
+
+    @return Free ram on Arduino
+*/
+int freeRam();
+
+/**
+    Clears a line on lcd
+
+    @param line The line to clear
+    @return void
+*/
+void clearLine(int line);
+
+/**
+    Prints glyphs from json string received on receivedChars
+
+    @return void
+*/
+void printGlyphs();
+
+/**
+    Gets staticLine from json string received on receivedChars
+
+    @return The string for the static line
+*/
+String getStaticLine();
+
+/**
+    Gets scrollingLine from json string received on receivedChars
+
+    @return The string for the static line
+*/
+String getScrollingLine();
+
+/**
+    Prints staticLine with glyphs from json string received on receivedChars
+
+    @return void
+*/
+void printStaticLine();
+
+/**
+    Prints scrollingLine for 'reps' times
+
+    @param scrollingLine The scrolling line
+    @param reps The number of repetitions for the scrolling line
+    @return void
+*/
+void printScrollingLine(String scrollingLine, int reps);
+
+/**
+    Receives a string with and End Marker and saves it to 'receivedChars'
+
+    @return The number of characters read
+*/
+int recvWithEndMarker();
+
+/**
+    Sends a string over Serial so butler knows Arduino is ready to
+    receive data
+
+    @return void
+*/
+void ready();
+
+void setup() {
+  Serial.begin(9600);
+  Serial.println(F("<Arduino is ready>"));
+  lcd.begin(lcdWidth, lcdHeight);
+	glyph->registerGlyph(0, GLYPHDUINO_GITHUB);
+	glyph->registerGlyph(1, GLYPHDUINO_CELSIUS);
+	glyph->registerGlyph(2, GLYPHDUINO_CLOUD);
+  glyph->registerGlyph(3, GLYPHDUINO_RAIN);
+  glyph->registerGlyph(4, GLYPHDUINO_SUN);
+  glyph->registerGlyph(5, GLYPHDUINO_BELL);
+}
+
+void loop() {
+  int bytesReceived = recvWithEndMarker();
+  if(bytesReceived > 0 && newData == true){
+		newData = false;
+    Serial.println("debug: " + receivedChars);
+		printScrollingLine(getScrollingLine(), 2);
+		totalReceived = 0;
+		receivedChars.remove(0);
+	}
+	ready();
+}
+
+// Gets free ram on Arduino
 int freeRam () {
   extern int __heap_start, *__brkval;
   int v;
   return (int) &v - (__brkval == 0 ? (int) &__heap_start : (int) __brkval);
 }
 
-/**
- * hello function: used as a Hello World at startup
- **/
-void hello(int time, uint8_t glyphId) {
-  glyph->registerGlyph(0, glyphId);
-  lcd.setCursor(5, 0);
-  lcd.print(F("Devy"));
-  lcd.setCursor(6, 1);
-  lcd.print(F("*-*"));
-
-  lcd.setCursor(2, 0);
-  glyph->printGlyph(glyphId);
-  lcd.setCursor(2, 1);
-  glyph->printGlyph(glyphId);
-
-  lcd.setCursor(12, 0);
-  glyph->printGlyph(glyphId);
-  lcd.setCursor(12, 1);
-  glyph->printGlyph(glyphId);
-
-  delay(time);
-  lcd.clear();
+// Clears a line on lcd
+void clearLine(int line){
+  for(int i = 0; i < lcdWidth; i++){
+    lcd.setCursor(i, line);
+    lcd.print(F(" "));
+  }
 }
 
+
+// Prints glyphs from json string received on receivedChars
 void printGlyphs(){
 	const size_t bufferSize = 2*JSON_OBJECT_SIZE(3) + 160;
 	DynamicJsonBuffer jsonBuffer(bufferSize);
@@ -64,19 +142,19 @@ void printGlyphs(){
 
 	for(int i = 0; i < lcdWidth; i++){
 		lcd.setCursor(i, 1);
-		if(glyphs[String(i)] == "?"){
+		if(glyphs[String(i)] == "?"){ // Unknown glyphs
 			lcd.print(F("?"));
 		}
 		else{
 			int glyphId = glyphs[String(i)];
 			if(glyphId > 0){
-				// Serial.println("debug: " + String(glyphId));
 				glyph->printGlyph(glyphId);
 			}
 		}
 	}
 }
 
+// Gets scrollingLine from json string received on receivedChars
 String getStaticLine(){
 	const size_t bufferSize = 2*JSON_OBJECT_SIZE(3) + 160;
 	DynamicJsonBuffer jsonBuffer(bufferSize);
@@ -86,18 +164,12 @@ String getStaticLine(){
   if (!root.success()) {
     Serial.println(F("error: parseObject() failed: "));
     Serial.println(receivedChars);
-    return;
+    return "error";
   }
 	return root["staticLine"];
 }
 
-
-void printStaticLine(){
-	lcd.print(getStaticLine());
-  // lcd.setCursor(8,1); lcd.print(freeRam());
-	printGlyphs();
-}
-
+// Gets scrollingLine from json string received on receivedChars
 String getScrollingLine(){
   const size_t bufferSize = JSON_OBJECT_SIZE(3) + JSON_OBJECT_SIZE(4) + 190;
 	DynamicJsonBuffer jsonBuffer(bufferSize);
@@ -107,23 +179,23 @@ String getScrollingLine(){
   if (!root.success()) {
     Serial.println(F("error: parseObject() failed: "));
     Serial.println(receivedChars);
-    return;
+    return "error";
   }
 	String scrollingLine = root["scrollingLine"];
 	return scrollingLine;
 }
 
-void clearLine(int line){
-  for(int i = 0; i < lcdWidth; i++){
-    lcd.setCursor(i, line);
-    lcd.print(F(" "));
-  }
+// Prints staticLine with glyphs from json string received on receivedChars
+void printStaticLine(){
+	lcd.print(getStaticLine());
+	printGlyphs();
 }
 
+// Prints scrollingLine for 'reps' times
 void printScrollingLine(String scrollingLine, int reps){
   for(int j = 0; j < reps; j++){
-    int i = 0;
-    int stringStart = 0; int stringStop = 0;
+    uint16_t i = 0;
+    uint16_t stringStart = 0; uint16_t stringStop = 0;
     int scrollCursor = lcdWidth;
     while (i < scrollingLine.length() + 1){
       lcd.setCursor(scrollCursor, 0);
@@ -153,6 +225,7 @@ void printScrollingLine(String scrollingLine, int reps){
 	printStaticLine();
 }
 
+// Receives a string with and End Marker and saves it to 'receivedChars'
 int recvWithEndMarker() {
   static int ndx = 0;
   char endMarker = '\n';
@@ -179,40 +252,7 @@ int recvWithEndMarker() {
 	return ndx;
 }
 
-void showNewData() {
-  lcd.clear();
-  for(int i = 0; i < receivedChars.length(); i++){
-    lcd.setCursor(0, 0);
-    lcd.print(receivedChars[i]);
-    delay(300);
-  }
-}
-
+// Sends a string over Serial so butler knows Arduino is ready to receive data
 void ready(){
 	Serial.println(F("<Ready>"));
-}
-
-void setup() {
-  Serial.begin(9600);
-  Serial.println(F("<Arduino is ready>"));
-  lcd.begin(lcdWidth, lcdHeight);
-	glyph->registerGlyph(0, GLYPHDUINO_GITHUB);
-	glyph->registerGlyph(1, GLYPHDUINO_CELSIUS);
-	glyph->registerGlyph(2, GLYPHDUINO_CLOUD);
-  glyph->registerGlyph(3, GLYPHDUINO_RAIN);
-  glyph->registerGlyph(4, GLYPHDUINO_SUN);
-  glyph->registerGlyph(5, GLYPHDUINO_BELL);
-
-}
-
-void loop() {
-  int bytesReceived = recvWithEndMarker();
-  if(bytesReceived > 0 && newData == true){
-		newData = false;
-    Serial.println("debug: " + receivedChars);
-		printScrollingLine(getScrollingLine(), 2);
-		totalReceived = 0;
-		receivedChars.remove(0);
-	}
-	ready();
 }
