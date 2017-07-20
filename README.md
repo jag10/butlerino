@@ -1,5 +1,5 @@
 # Butlerino
-> Butler + Arduino !
+> Butler + Arduino ! [Watch video](https://www.youtube.com/watch?v=dkMW5uxVipc)
 
 <!-- [![NPM Version][npm-image]][npm-url]
 [![Build Status][travis-image]][travis-url]
