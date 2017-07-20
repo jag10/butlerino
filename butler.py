@@ -106,8 +106,8 @@ def staticLine(scrollingLine):
     commits = git()
     emails = "0"
     json_mock = {
-        "scrollingLine": "Lincoln: The war has begun",
-        # "scrollingLine": scrollingLine,
+        # "scrollingLine": "Lincoln: The war has begun",
+        "scrollingLine": scrollingLine,
         "staticLine": " " + str(temp_c) + "   " + emails + "       " + str(commits),
         "glyphs": {
             "0": condition,
@@ -125,12 +125,12 @@ if __name__ == '__main__':
 
     news(NEWS_SOURCE)
     comm()
-    # schedule.every(60).seconds.do(news, NEWS_SOURCE)
-    # schedule.every().second.do(comm)
-    #
-    # while True:
-    #     schedule.run_pending()
-    #     time.sleep(1)
+    schedule.every(60).seconds.do(news, NEWS_SOURCE)
+    schedule.every().second.do(comm)
+
+    while True:
+        schedule.run_pending()
+        time.sleep(1)
 
     # UNCOMMENT FOR DEBUG INFO
     # while True:
