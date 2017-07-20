@@ -68,8 +68,6 @@ def news(source):
 # STATIC LINE FUNCTIONS
 
 # https://developer.yahoo.com/weather/
-
-
 def get_weather(location):
     q = 'select item.condition from weather.forecast where woeid in (select woeid from geo.places(1) where text="' + \
         location + '")'
