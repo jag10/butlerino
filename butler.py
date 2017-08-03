@@ -6,6 +6,7 @@ import time
 import subprocess
 import functools
 import json
+import os
 
 import requests
 
@@ -18,6 +19,8 @@ msgs = []
 LOCATION = "Albacete"
 NEWS_SOURCE = "http://www.bbc.com/news"
 ARDUINO_PORT = "/dev/tty.usbmodem1421"
+GIT_DIRS = "/Users/jag/work/repos/"
+GIT_DIRS_MAX_DEPTH = 1
 
 
 def comm():
@@ -91,12 +94,28 @@ def get_weather(location):
     return (temp_f, temp_c, condition)
 
 
+def walklevel(directory, level=1):
+    directory = directory.rstrip(os.path.sep)
+    assert os.path.isdir(directory)
+    num_sep = directory.count(os.path.sep)
+    for root, dirs, files in os.walk(directory):
+        yield root, dirs, files
+        num_sep_this = root.count(os.path.sep)
+        if num_sep + level <= num_sep_this:
+            del dirs[:]
+
 def git():
-    cmd = "git log --since='7d' --oneline | wc -l"
-    ps = subprocess.Popen(
-        cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-    output = ps.communicate()[0]
-    return str(int(output)).zfill(2)
+    commits = 0
+    for subdir, dirs, files in walklevel(GIT_DIRS, GIT_DIRS_MAX_DEPTH):
+        # print(subdirs)
+        for d in dirs:
+            if d == '.git':
+                cmd = "git -C "+ os.path.join(subdir, d) + " log --since='1.week' --oneline | wc -l"
+                ps = subprocess.Popen(
+                    cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+                output = ps.communicate()[0]
+                commits += int(output)
+    return str(commits).zfill(2)
 
 
 def staticLine(scrollingLine):
